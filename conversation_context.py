@@ -128,7 +128,7 @@ class ConversationContext:
 
     def get_history(self):
         """
-        Returnd the chronological list of messages.
+        Return the chronological list of messages.
         """
         return self.messages
     
