@@ -22,6 +22,7 @@ def lucky_number(birth_date, **kwargs):
     """
     if birth_date is None:
         birth_date = kwargs.get("birth_date")
+        
     if not birth_date:
         return " I could not identify birth date. Try again."
     # Get the current date string in DDMMYYYY format

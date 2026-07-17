@@ -50,21 +50,6 @@ class LLMClient:
         including generated message, tool calls and API token usage.
         """
 
-        api_messages = []
-        for msg in messages:
-            # create a copy
-            msg_copy = copy.deepcopy(msg)
-            
-            if "tool_calls" in msg_copy and msg_copy["tool_calls"]:
-                for tc in msg_copy["tool_calls"]:
-                    # If 'arguments' is a dict or an object in Python, convert to string JSON 
-                    if "function" in tc and "arguments" in tc["function"]:
-                        args_val = tc["function"]["arguments"]
-                        if not isinstance(args_val, str):
-                            tc["function"]["arguments"] = json.dumps(args_val)
-                            
-            api_messages.append(msg_copy)
-
         # Prepare arguments for the completion API call
         kwargs = {
             "model": MODEL_NAME,

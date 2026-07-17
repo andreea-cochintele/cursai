@@ -54,10 +54,28 @@ class Agent:
     def _get_retrieved_context(self, user_message: str) -> str:
         """
         Queries the vector database and aggregate matching documents
+        If no relevant chunks are found, returns a safe fallback instruction.
         """
-        client = EmbeddingsClient()
-        results = client.semantic_search(user_message, top_k = 2)
-
+        try:
+            client = EmbeddingsClient()
+            # Search for the best 2 fragments
+            results = client.semantic_search(user_message, top_k = 2)
+        except Exception as e:
+            # The data base is not accesible
+            print(f"[WARNING] Semantic search failed: {e}")
+            return(
+                "# Retrieved Context\n"
+                "Warning: Internal knowledge base is currently offline.\n"
+                "Fallback to you general system administration knowledge.\n"
+            )
+        # The search was fine but no entries over MIN_SIMILARITY
+        if not results:
+            return (
+                "# Retrieved Context\n"
+                "No specific internal documentation matches this query.\n"
+                "Fallback to you general system administration knowledge\n"
+            )
+        # We found relevant data
         retrieved_context = "# Retrieved Context \n"
         for result in results:
             retrieved_context += result["content"] + "\n\n"

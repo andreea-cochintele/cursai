@@ -4,7 +4,7 @@ Conversation memory management.
 This module is responsible for storing and retrieving
 messages exchanged between the user and the AI assistant.
 """
-from config import INPUT_TOKEN_PRICE_PER_MILLION, OUTPUT_TOKEN_PRICE_PER_MILLION
+from config import INPUT_TOKEN_PRICE_PER_MILLION, OUTPUT_TOKEN_PRICE_PER_MILLION,MAX_HISTORY_MESSAGES
 import json
 import os
 from utils import count_tokens
@@ -42,10 +42,14 @@ class ConversationContext:
         """
 
         # Load the primary identity file
-        with open(
-            "knowledge/prompts/identity.md", "r", encoding="utf-8"
-        ) as f:
-            prompt_content = f.read()
+        try:
+            with open(
+                "knowledge/prompts/identity.md", "r", encoding="utf-8"
+            ) as f:
+                prompt_content = f.read()
+        except FileNotFoundError:
+            print("[ERROR]:'identity.md' is missing.")
+            return []
     
 
         # Dynamically append essential company facts
@@ -58,7 +62,11 @@ class ConversationContext:
                         prompt_content += f"\n\n#{document['name']}\n"
                         prompt_content += "\n\n" + facts_content
         except FileNotFoundError:
-            pass
+            print("[Warning] 'registry.json' not found. Starting with baseline identity only.")
+            company_facts = []
+        except json.JSONDecodeError:
+            print("[Error] 'registry.json' is corrupted. Please check its JSON syntax.")
+            company_facts = []
 
         # Dinamically append essential procedures
         try:
@@ -70,7 +78,11 @@ class ConversationContext:
                         prompt_content += f"\n\n#{document['name']}\n"
                         prompt_content += "\n\n" + procedures_content
         except FileNotFoundError:
-            pass
+            print("[Warning] 'registry.json' not found. Starting with baseline identity only.")
+            company_facts = []
+        except json.JSONDecodeError:
+            print("[Error] 'registry.json' is corrupted. Please check its JSON syntax.")
+            company_facts = []
 
         return {
             "role": "system",
@@ -80,19 +92,39 @@ class ConversationContext:
 
     def add_message(self, message:dict, input_tokens:int = 0,output_tokens:int=0):
         """
-        Appends a message to the memory stack and updates the global session counters
+        Adds a new message to the history and automatically recycles the context
+        if the conversation grows too long, preserving the core system identity.
         """
-        
+        # Default fallback to ensure msg_to_store is defined
         msg_to_store = message.copy()
-        # Assign token values
-        msg_to_store["input_tokens"] = msg_to_store.get("input_tokens",input_tokens)
-        msg_to_store["output_tokens"] = msg_to_store.get("output_tokens",output_tokens)
 
-        # Increment overall session counters
-        self.total_input_tokens += msg_to_store["input_tokens"]
-        self.total_output_tokens += msg_to_store["output_tokens"]
+        if input_tokens or output_tokens:
+            
+            # Assign token values
+            msg_to_store["input_tokens"] = msg_to_store.get("input_tokens",input_tokens)
+            msg_to_store["output_tokens"] = msg_to_store.get("output_tokens",output_tokens)
+
+            # Increment overall session counters
+            self.total_input_tokens += msg_to_store["input_tokens"]
+            self.total_output_tokens += msg_to_store["output_tokens"]
         
+        # append the message with token metadata ti you message list
         self.messages.append(msg_to_store)
+
+        # Prevent LLM context window overflow error during long chat
+        if len(self.messages) > MAX_HISTORY_MESSAGES:
+            print(f"\n [Context Recycling] Context reached {len(self.messages)} messages. Recycling oldest...")
+            
+            # Safeguard index 0: Ensure the System Identity Prompt is never purged
+            system_prompt = self.messages[0]
+
+            # Keep only the most recent interactive turns(last 10 messages)ontext Recycling] Context successfully re
+            recent_messages = self.messages[-10:]
+
+            # Reconstruct the fresh array for both lists
+            self.messages = [system_prompt] + recent_messages
+
+            print(f"[Context Recycling] Context succesfully recycled.")
 
     def get_history(self):
         """

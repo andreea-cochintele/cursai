@@ -66,12 +66,16 @@ class EmbeddingGenerator:
         
         
         print(f"[INFO] Saving {len(embeddings_data)} vectors to 'embeddings.json'...")
-        with open("embeddings.json","w",encoding="utf-8") as f:
-            json.dump(
-                embeddings_data,
-                f,
-                ensure_ascii=False,
-                indent=4
-            )
+        try:
+            with open("embeddings.json","w",encoding="utf-8") as f:
+                json.dump(
+                    embeddings_data,
+                    f,
+                    ensure_ascii=False,
+                    indent=4
+                )
+        except FileNotFoundError:
+            print("[ERROR]:'embeddings.json' is missing.")
+            return []
         print("[SUCCES] Vector databse initializes and saved succesfully")
         

@@ -70,6 +70,7 @@ class EmbeddingsClient:
             print("[ERROR]:'embeddings.json' is missing.")
             return []
 
+        
         # Generate the vector representation for the user's query
         question_embedding = self.get_embedding(user_question)
         results = []
