@@ -113,14 +113,7 @@ The one real code-level difference between providers, already handled for you: `
 **Caveats:**
 - Delete `embeddings.json` after switching providers — vectors from one embedding model aren't compatible with another.
 - Tool calling (the `service_status`/`service_logs`/`disk_usage`/`lucky_number` tools) needs a model that actually supports it. `qwen3:1.7b`, `llama3.1`, `qwen2.5`, and `mistral-nemo` are known to work; smaller/older models may just silently ignore the `tools` field and never call anything. Even among tool-calling-capable models, smaller ones (like `qwen3:1.7b`) can be less reliable on ambiguous input — e.g. asking to check a service status without giving a name may cause the model to invent a made-up service name and answer in plain text instead of asking for clarification or calling the tool with missing arguments. Larger models handle this more gracefully; for a course/demo project it's a reasonable tradeoff for the disk space and speed you save.
-- Cost tracking under `"ollama"` always shows `$0.000000` — it's local and free, so the profile sets both price-per-million settings to `0.0`.
-If your organization routes all HTTP traffic through a proxy (`HTTP_PROXY`/`HTTPS_PROXY`), make sure `localhost`/`127.0.0.1` are excluded, or any local service calls will be blocked or misrouted:
- 
-```bash
-export NO_PROXY="localhost,127.0.0.1"
-export no_proxy="localhost,127.0.0.1"
-```
- 
+
 ## Running
  
 **Web (recommended):**
